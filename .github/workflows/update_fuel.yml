@@ -1,0 +1,37 @@
+name: Atualizar Preços Combustível
+
+on:
+  schedule:
+    # Corre todos os dias às 06h00 UTC (preço médio do dia na DGEG)
+    - cron: '0 6 * * *'
+    # Corre às sextas-feiras às 13h30 UTC (quando saem as notícias das previsões)
+    - cron: '30 13 * * 5'
+  workflow_dispatch: # Permite correr manualmente com um clique
+
+permissions:
+  contents: write
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar Dependências
+        run: pip install requests beautifulsoup4
+
+      - name: Executar Scraper
+        run: python update_fuel.py
+
+      - name: Commit e Push das Alterações
+        run: |
+          git config --global user.name "FuelBot"
+          git config --global user.email "fuelbot@users.noreply.github.com"
+          git add fuel_data.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: atualizar dados de combustível" && git push)
